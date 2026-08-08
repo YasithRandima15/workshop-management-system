@@ -10,7 +10,7 @@ import {
   orderBy,
   addDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Job, CreateJobInput, JobStatus, JobStatusHistory } from '@/types/job';
 import { INITIAL_JOBS } from './mockData';
 import { PricingService } from './pricing.service';
@@ -51,7 +51,7 @@ export class JobsService {
 
     try {
       const jobsRef = collection(db, 'jobs');
-      const snap = await getDocs(jobsRef);
+      const snap = await withTimeout(getDocs(jobsRef));
       const jobs: Job[] = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data(),
@@ -78,7 +78,7 @@ export class JobsService {
 
     try {
       const docRef = doc(db, 'jobs', id);
-      const snap = await getDoc(docRef);
+      const snap = await withTimeout(getDoc(docRef));
       if (snap.exists()) {
         return { id: snap.id, ...snap.data() } as Job;
       }
@@ -136,7 +136,7 @@ export class JobsService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'jobs'), newJobData);
+        const docRef = await withTimeout(addDoc(collection(db, 'jobs'), newJobData));
         const createdJob: Job = { id: docRef.id, ...newJobData };
 
         await this.recordStatusTransition(createdJob.id, 'QUOTATION', createdJob.status, 'Job Created');
