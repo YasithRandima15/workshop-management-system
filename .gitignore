@@ -1,0 +1,37 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing & Coverage
+/coverage
+
+# Next.js Build & Outputs
+/.next/
+/out/
+/build
+tsconfig.tsbuildinfo
+
+# Production / Vercel
+/.vercel
+
+# Debug Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment Variables (Secrets should NEVER be pushed to Git)
+.env*.local
+.env.local
+
+# IDE & System Files
+.DS_Store
+*.pem
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
