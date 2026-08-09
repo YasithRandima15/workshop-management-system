@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
-import { Printer, Cpu, Trash2, Copy } from 'lucide-react';
+import { Printer, Cpu, Trash2, Copy, Zap } from 'lucide-react';
 import { formatLKR } from '@/lib/utils/formatters';
 import { PricingService } from '@/lib/services/pricing.service';
 
@@ -37,7 +37,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
           materialName: 'PLA Tough',
           color: 'Black',
           filamentWeightGrams: weight,
-          estimatedPrintMinutes: 60,
+          estimatedPrintMinutes: 120, // 2 hours
           layerHeightMm: 0.20,
           infillPercentage: 20,
         },
@@ -55,7 +55,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
           thicknessMm: 18,
           lengthMm: 300,
           widthMm: 200,
-          estimatedMachiningMinutes: 60,
+          estimatedMachiningMinutes: 60, // 1 hour
           materialCostLKR: 3000,
         },
         printDetails: undefined,
@@ -81,10 +81,11 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
     });
   };
 
-  const update3DWeightOrRate = (newWeight?: number, newRate?: number) => {
+  const update3DWeightOrRate = (newWeight?: number, newRate?: number, newHours?: number) => {
     const weight = Math.max(0, newWeight !== undefined ? newWeight : (part.printDetails?.filamentWeightGrams || 0));
     const rate = newRate !== undefined ? newRate : (weight < 100 ? 20 : 15);
-    
+    const printMinutes = newHours !== undefined ? Math.round(newHours * 60) : (part.printDetails?.estimatedPrintMinutes || 120);
+
     if (newRate !== undefined) setRatePerGram(newRate);
     else if (newWeight !== undefined) {
       const autoRate = newWeight < 100 ? 20 : 15;
@@ -101,7 +102,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
         materialName: part.printDetails?.materialName || 'PLA Tough',
         color: part.printDetails?.color || 'Black',
         filamentWeightGrams: weight,
-        estimatedPrintMinutes: part.printDetails?.estimatedPrintMinutes || 60,
+        estimatedPrintMinutes: printMinutes,
       },
     });
   };
@@ -127,6 +128,9 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
       totalPriceLKR: autoPrice * part.quantity,
     });
   };
+
+  const printHours = ((part.printDetails?.estimatedPrintMinutes || 120) / 60);
+  const cncHours = ((part.cncDetails?.estimatedMachiningMinutes || 60) / 60);
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-4 shadow-xs transition-all">
@@ -198,19 +202,19 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
         />
       </div>
 
-      {/* Simplified 3D Printing Fields */}
+      {/* Simplified 3D Printing Fields with Operating Hours */}
       {part.manufacturingMethod === '3D_PRINTING' && (
         <div className="bg-cyan-50/40 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-900/40 rounded-md p-3 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400">
-              3D Print Gram Weight Calculation
+              3D Print Details & Operating Hours
             </p>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300">
               Tier Rule: &lt;100g = 20 LKR/g | ≥100g = 15 LKR/g
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
             <Select
               label="Filament Material"
               value={part.printDetails?.materialName || 'PLA Tough'}
@@ -221,7 +225,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
                     materialName: e.target.value,
                     color: part.printDetails?.color || 'Black',
                     filamentWeightGrams: part.printDetails?.filamentWeightGrams || 50,
-                    estimatedPrintMinutes: part.printDetails?.estimatedPrintMinutes || 60,
+                    estimatedPrintMinutes: part.printDetails?.estimatedPrintMinutes || 120,
                   },
                 })
               }
@@ -235,34 +239,45 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
             />
 
             <Input
-              label="Part Weight in Grams (g) *"
+              label="Weight in Grams (g) *"
               type="number"
               value={part.printDetails?.filamentWeightGrams || 0}
-              onChange={(e) => update3DWeightOrRate(parseFloat(e.target.value) || 0, undefined)}
+              onChange={(e) => update3DWeightOrRate(parseFloat(e.target.value) || 0, undefined, undefined)}
             />
 
             <Input
-              label="Cost Rate (LKR per gram) *"
+              label="Cost Rate (LKR / g) *"
               type="number"
               value={ratePerGram}
-              onChange={(e) => update3DWeightOrRate(undefined, parseFloat(e.target.value) || 0)}
+              onChange={(e) => update3DWeightOrRate(undefined, parseFloat(e.target.value) || 0, undefined)}
+            />
+
+            <Input
+              label="⚡ Operating Hours (hrs) *"
+              type="number"
+              step="0.5"
+              value={printHours}
+              onChange={(e) => update3DWeightOrRate(undefined, undefined, parseFloat(e.target.value) || 0)}
             />
           </div>
 
-          <div className="p-2 bg-white dark:bg-zinc-900 rounded border border-cyan-200 dark:border-cyan-900/60 text-xs flex justify-between items-center font-mono">
-            <span className="text-zinc-500">Calculated 3D Print Cost:</span>
+          <div className="p-2 bg-white dark:bg-zinc-900 rounded border border-cyan-200 dark:border-cyan-900/60 text-xs flex flex-wrap justify-between items-center font-mono gap-2">
+            <span className="text-zinc-500">Part Price (Weight Only):</span>
             <span className="font-bold text-cyan-600 dark:text-cyan-400">
               {part.printDetails?.filamentWeightGrams || 0}g × {ratePerGram} LKR/g = {formatLKR(part.unitPriceLKR)}
+            </span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-sans">
+              <Zap className="h-3 w-3 shrink-0" /> Light bill units: {(printHours * 0.1 * part.quantity).toFixed(2)} units (for monthly light bill)
             </span>
           </div>
         </div>
       )}
 
-      {/* CNC Fields */}
+      {/* CNC Fields with Operating Hours */}
       {part.manufacturingMethod === 'CNC' && (
         <div className="bg-amber-50/40 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded-md p-3 space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
-            CNC Machining Parameters
+            CNC Machining Details & Operating Hours
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <Select
@@ -289,11 +304,18 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
               onChange={(e) => updateCNCDetails('materialCostLKR', parseFloat(e.target.value) || 0)}
             />
             <Input
-              label="Machining Time (mins)"
+              label="⚡ Operating Hours (hrs) *"
               type="number"
-              value={part.cncDetails?.estimatedMachiningMinutes || 0}
-              onChange={(e) => updateCNCDetails('estimatedMachiningMinutes', parseInt(e.target.value) || 0)}
+              step="0.5"
+              value={cncHours}
+              onChange={(e) => updateCNCDetails('estimatedMachiningMinutes', Math.round((parseFloat(e.target.value) || 0) * 60))}
             />
+          </div>
+
+          <div className="p-2 bg-white dark:bg-zinc-900 rounded border border-amber-200 dark:border-amber-900/60 text-xs flex justify-between items-center font-mono">
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-sans">
+              <Zap className="h-3 w-3 shrink-0" /> Light bill units: {(cncHours * 0.3 * part.quantity).toFixed(2)} units (for monthly light bill)
+            </span>
           </div>
         </div>
       )}
