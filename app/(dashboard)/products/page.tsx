@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatLKR } from '@/lib/utils/formatters';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, Trash2 } from 'lucide-react';
 import { ProductsService } from '@/lib/services/products.service';
 import { Product } from '@/types/product';
 import { ProductModal } from '@/components/products/ProductModal';
@@ -30,6 +30,13 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete catalog product ${name}?`)) {
+      await ProductsService.deleteProduct(id);
+      fetchProducts();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -73,7 +80,16 @@ export default function ProductsPage() {
                 <span className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400">
                   {p.sku}
                 </span>
-                <Badge variant="outline">{p.categoryName}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{p.categoryName}</Badge>
+                  <button
+                    onClick={() => handleDelete(p.id, p.name)}
+                    className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div>

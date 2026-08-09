@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { formatLKR, formatDate } from '@/lib/utils/formatters';
-import { Plus, Search, UserPlus, Phone, Mail, MapPin, Briefcase } from 'lucide-react';
+import { Plus, Search, UserPlus, Phone, Mail, MapPin, Briefcase, Trash2 } from 'lucide-react';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -30,6 +30,13 @@ export default function CustomersPage() {
       c.customerCode.toLowerCase().includes(search.toLowerCase()) ||
       c.companyName?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete customer ${name}?`)) {
+      await CustomersService.deleteCustomer(id);
+      loadCustomers();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -71,7 +78,16 @@ export default function CustomersPage() {
               <span className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400">
                 {cust.customerCode}
               </span>
-              <span className="text-[11px] text-zinc-400">Added: {formatDate(cust.createdAt)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-zinc-400">Added: {formatDate(cust.createdAt)}</span>
+                <button
+                  onClick={() => handleDelete(cust.id, cust.name)}
+                  className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                  title="Delete Customer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div>

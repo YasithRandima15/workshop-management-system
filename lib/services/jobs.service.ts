@@ -9,6 +9,7 @@ import {
   where,
   orderBy,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Job, CreateJobInput, JobStatus, JobStatusHistory } from '@/types/job';
@@ -241,6 +242,18 @@ export class JobsService {
     }
 
     return updated;
+  }
+
+  static async deleteJob(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'jobs', id)));
+      } catch (err) {
+        console.error('Firestore deleteJob error:', err);
+      }
+    }
+    const local = getLocalJobs().filter((j) => j.id !== id);
+    saveLocalJobs(local);
   }
 
   static async archiveJob(id: string): Promise<void> {

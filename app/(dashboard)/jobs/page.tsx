@@ -42,6 +42,13 @@ export default function JobsPage() {
     return matchesSearch && matchesStatus && matchesPriority && matchesMethod;
   });
 
+  const handleDeleteJob = async (id: string, jobNumber: string) => {
+    if (confirm(`Are you sure you want to delete job order ${jobNumber}?`)) {
+      await JobsService.deleteJob(id);
+      loadJobs();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Page Header & Actions */}
@@ -137,9 +144,9 @@ export default function JobsPage() {
 
       {/* Main View Area */}
       {viewMode === 'kanban' ? (
-        <JobsKanban jobs={filteredJobs} onJobStatusChange={loadJobs} />
+        <JobsKanban jobs={filteredJobs} onJobStatusChange={loadJobs} onDeleteJob={handleDeleteJob} />
       ) : (
-        <JobsTable jobs={filteredJobs} />
+        <JobsTable jobs={filteredJobs} onDeleteJob={handleDeleteJob} />
       )}
     </div>
   );

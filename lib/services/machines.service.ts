@@ -5,8 +5,9 @@ import {
   getDoc,
   updateDoc,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Machine, CreateMachineInput, MachineStatus } from '@/types/machine';
 import { INITIAL_MACHINES } from './mockData';
 
@@ -42,7 +43,7 @@ export class MachinesService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'machines'));
+      const snap = await withTimeout(getDocs(collection(db, 'machines')));
       const machines: Machine[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Machine));
       if (machines.length === 0) {
         return getLocalMachines();
@@ -79,7 +80,7 @@ export class MachinesService {
 
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'machines', id), updatedPayload);
+        await withTimeout(updateDoc(doc(db, 'machines', id), updatedPayload));
       } catch (err) {
         console.error('Firestore updateMachineStatus error:', err);
       }
@@ -105,7 +106,7 @@ export class MachinesService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'machines'), data);
+        const docRef = await withTimeout(addDoc(collection(db, 'machines'), data));
         return { id: docRef.id, ...data };
       } catch (err) {
         console.error('Firestore createMachine error:', err);
@@ -115,5 +116,17 @@ export class MachinesService {
     const created: Machine = { id: `mach-${Date.now()}`, ...data };
     saveLocalMachines([...getLocalMachines(), created]);
     return created;
+  }
+
+  static async deleteMachine(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'machines', id)));
+      } catch (err) {
+        console.error('Firestore deleteMachine error:', err);
+      }
+    }
+    const local = getLocalMachines().filter((m) => m.id !== id);
+    saveLocalMachines(local);
   }
 }

@@ -24,6 +24,7 @@ import {
   MapPin,
   CheckCircle2,
   FileText,
+  Trash2,
 } from 'lucide-react';
 
 export default function JobDetailsPage() {
@@ -77,6 +78,14 @@ export default function JobDetailsPage() {
     );
   }
 
+  const handleDeleteJob = async () => {
+    if (!job) return;
+    if (confirm(`Are you sure you want to delete job ${job.jobNumber}? This operation cannot be undone.`)) {
+      await JobsService.deleteJob(job.id);
+      router.push('/jobs');
+    }
+  };
+
   if (!job) {
     return (
       <div className="p-8 text-center space-y-4">
@@ -127,6 +136,16 @@ export default function JobDetailsPage() {
               Record Payment
             </Button>
           )}
+
+          <Button
+            onClick={handleDeleteJob}
+            size="sm"
+            variant="outline"
+            className="text-rose-500 hover:text-rose-600 border-rose-200 dark:border-rose-900/60"
+            leftIcon={<Trash2 className="h-4 w-4" />}
+          >
+            Delete Job
+          </Button>
 
           {/* Quick Status Selector dropdown */}
           <Select

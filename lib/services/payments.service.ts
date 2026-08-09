@@ -4,8 +4,9 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Payment, CreatePaymentInput } from '@/types/payment';
 import { INITIAL_PAYMENTS } from './mockData';
 import { JobsService } from './jobs.service';
@@ -42,7 +43,7 @@ export class PaymentsService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'payments'));
+      const snap = await withTimeout(getDocs(collection(db, 'payments')));
       const payments: Payment[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Payment));
       if (payments.length === 0) {
         return getLocalPayments();
@@ -87,7 +88,7 @@ export class PaymentsService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'payments'), newPaymentData);
+        const docRef = await withTimeout(addDoc(collection(db, 'payments'), newPaymentData));
         return { id: docRef.id, ...newPaymentData };
       } catch (err) {
         console.error('Firestore createPayment error:', err);
@@ -97,5 +98,17 @@ export class PaymentsService {
     const created: Payment = { id: `pay-${Date.now()}`, ...newPaymentData };
     saveLocalPayments([created, ...getLocalPayments()]);
     return created;
+  }
+
+  static async deletePayment(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'payments', id)));
+      } catch (err) {
+        console.error('Firestore deletePayment error:', err);
+      }
+    }
+    const local = getLocalPayments().filter((p) => p.id !== id);
+    saveLocalPayments(local);
   }
 }

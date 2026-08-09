@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatLKR, formatDate } from '@/lib/utils/formatters';
-import { FileText, Plus, CheckCircle, Clock } from 'lucide-react';
+import { FileText, Plus, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { QuotationsService } from '@/lib/services/quotations.service';
 import { Quotation } from '@/types/quotation';
 import { QuotationModal } from '@/components/quotations/QuotationModal';
@@ -34,6 +34,13 @@ export default function QuotationsPage() {
   const handleStatusChange = async (id: string, status: Quotation['status']) => {
     await QuotationsService.updateQuotationStatus(id, status);
     fetchQuotations();
+  };
+
+  const handleDelete = async (id: string, number: string) => {
+    if (confirm(`Are you sure you want to delete quotation ${number}?`)) {
+      await QuotationsService.deleteQuotation(id);
+      fetchQuotations();
+    }
   };
 
   return (
@@ -78,17 +85,26 @@ export default function QuotationsPage() {
                 <span className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400">
                   {q.quotationNumber}
                 </span>
-                <Badge
-                  variant={
-                    q.status === 'ACCEPTED'
-                      ? 'success'
-                      : q.status === 'REJECTED'
-                      ? 'danger'
-                      : 'secondary'
-                  }
-                >
-                  {q.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      q.status === 'ACCEPTED'
+                        ? 'success'
+                        : q.status === 'REJECTED'
+                        ? 'danger'
+                        : 'secondary'
+                    }
+                  >
+                    {q.status}
+                  </Badge>
+                  <button
+                    onClick={() => handleDelete(q.id, q.quotationNumber)}
+                    className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                    title="Delete Quotation"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div>

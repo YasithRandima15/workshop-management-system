@@ -1,5 +1,5 @@
-export type MachineType = '3D_PRINTER' | 'CNC_ROUTER' | 'LASER_CUTTER';
-export type MachineStatus = 'IDLE' | 'RUNNING' | 'MAINTENANCE' | 'OFFLINE';
+export type MachineType = '3D_PRINTER' | 'CNC' | 'CNC_ROUTER' | 'LASER_CUTTER';
+export type MachineStatus = 'IDLE' | 'RUNNING' | 'MAINTENANCE' | 'OFFLINE' | 'DOWN';
 
 export interface Machine {
   id: string;
@@ -7,6 +7,7 @@ export interface Machine {
   type: MachineType;
   model: string;
   status: MachineStatus;
+  hourlyRateLKR?: number;
   currentJobId?: string | null;
   currentJobTitle?: string | null;
   totalOperatingMinutes: number;

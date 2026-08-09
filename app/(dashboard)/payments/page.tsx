@@ -7,14 +7,26 @@ import { PaymentsService } from '@/lib/services/payments.service';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatLKR, formatDateTime } from '@/lib/utils/formatters';
-import { CreditCard, DollarSign } from 'lucide-react';
+import { CreditCard, DollarSign, Trash2 } from 'lucide-react';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
 
+  const loadPayments = async () => {
+    const list = await PaymentsService.listPayments();
+    setPayments(list);
+  };
+
   useEffect(() => {
-    PaymentsService.listPayments().then(setPayments);
+    loadPayments();
   }, []);
+
+  const handleDelete = async (id: string, number: string) => {
+    if (confirm(`Are you sure you want to delete payment record ${number}?`)) {
+      await PaymentsService.deletePayment(id);
+      loadPayments();
+    }
+  };
 
   const totalCollected = payments.reduce((sum, p) => sum + p.amountLKR, 0);
 
@@ -49,6 +61,7 @@ export default function PaymentsPage() {
               <th className="p-3.5">Method</th>
               <th className="p-3.5 text-right">Amount (LKR)</th>
               <th className="p-3.5">Timestamp</th>
+              <th className="p-3.5 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -71,6 +84,15 @@ export default function PaymentsPage() {
                 </td>
                 <td className="p-3.5 text-zinc-500 font-mono text-[11px]">
                   {formatDateTime(p.recordedAt)}
+                </td>
+                <td className="p-3.5 text-center">
+                  <button
+                    onClick={() => handleDelete(p.id, p.paymentNumber)}
+                    className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                    title="Delete Payment"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </td>
               </tr>
             ))}

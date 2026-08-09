@@ -5,8 +5,9 @@ import {
   getDoc,
   updateDoc,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Material, CreateMaterialInput } from '@/types/material';
 import { INITIAL_MATERIALS } from './mockData';
 
@@ -43,7 +44,7 @@ export class MaterialsService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'materials'));
+      const snap = await withTimeout(getDocs(collection(db, 'materials')));
       const mats: Material[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Material));
       if (mats.length === 0) {
         return getLocalMaterials().filter((m) => includeArchived || !m.archivedAt);
@@ -71,7 +72,7 @@ export class MaterialsService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'materials'), data);
+        const docRef = await withTimeout(addDoc(collection(db, 'materials'), data));
         return { id: docRef.id, ...data };
       } catch (err) {
         console.error('Firestore createMaterial error:', err);
@@ -98,10 +99,10 @@ export class MaterialsService {
 
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'materials', id), {
+        await withTimeout(updateDoc(doc(db, 'materials', id), {
           currentStockQuantity: newQty,
           updatedAt: now,
-        });
+        }));
       } catch (err) {
         console.error('Firestore updateStock error:', err);
       }
@@ -115,5 +116,17 @@ export class MaterialsService {
     }
 
     return updated;
+  }
+
+  static async deleteMaterial(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'materials', id)));
+      } catch (err) {
+        console.error('Firestore deleteMaterial error:', err);
+      }
+    }
+    const local = getLocalMaterials().filter((m) => m.id !== id);
+    saveLocalMaterials(local);
   }
 }

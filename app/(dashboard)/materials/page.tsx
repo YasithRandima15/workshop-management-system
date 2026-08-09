@@ -6,22 +6,13 @@ import { MaterialsService } from '@/lib/services/materials.service';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
-import { Select } from '@/components/ui/Select';
 import { formatLKR } from '@/lib/utils/formatters';
-import { Layers, Plus, AlertTriangle, Printer, Cpu } from 'lucide-react';
+import { Layers, Plus, Printer, Cpu, Trash2 } from 'lucide-react';
+import { MaterialModal } from '@/components/materials/MaterialModal';
 
 export default function MaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
-  const [type, setType] = useState<'3D_PRINTING' | 'CNC'>('3D_PRINTING');
-  const [category, setCategory] = useState<string>('PLA');
-  const [color, setColor] = useState<string>('');
-  const [stock, setStock] = useState<number>(1000);
-  const [threshold, setThreshold] = useState<number>(500);
-  const [unitCost, setUnitCost] = useState<number>(10);
 
   const loadMaterials = async () => {
     const list = await MaterialsService.listMaterials();
@@ -32,23 +23,10 @@ export default function MaterialsPage() {
     loadMaterials();
   }, []);
 
-  const handleAddMaterial = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await MaterialsService.createMaterial({
-        name,
-        type,
-        category: category as any,
-        color,
-        unit: type === '3D_PRINTING' ? 'grams' : 'sheets',
-        currentStockQuantity: stock,
-        minStockThreshold: threshold,
-        unitCostLKR: unitCost,
-      });
-      setIsModalOpen(false);
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete material ${name}?`)) {
+      await MaterialsService.deleteMaterial(id);
       loadMaterials();
-    } catch (err) {
-      console.error('Failed to create material', err);
     }
   };
 
@@ -61,7 +39,7 @@ export default function MaterialsPage() {
             Raw Materials & Inventory Stock
           </h1>
           <p className="text-xs text-zinc-500 mt-1">
-            Track 3D printing filament weights (PLA, PETG, ABS) and CNC hardwood/sheet stocks.
+            Track 3D printing filament weights (PLA, PETG, ABS), SLA resins, and CNC hardwood/metal sheet stocks.
           </p>
         </div>
 
@@ -71,88 +49,86 @@ export default function MaterialsPage() {
       </div>
 
       {/* Materials Inventory Table / Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {materials.map((mat) => {
-          const isLowStock = mat.currentStockQuantity <= mat.minStockThreshold;
+      {materials.length === 0 ? (
+        <div className="p-12 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg text-center space-y-3">
+          <Layers className="h-8 w-8 text-zinc-400 mx-auto" />
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">No Raw Materials Registered</h3>
+          <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+            Add 3D printer filaments, resin spools, or CNC hardwood/metal sheet inventory to enable cost calculations.
+          </p>
+          <Button size="sm" onClick={() => setIsModalOpen(true)}>
+            Add First Material
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {materials.map((mat) => {
+            const isLowStock = mat.currentStockQuantity <= mat.minStockThreshold;
 
-          return (
-            <Card
-              key={mat.id}
-              className={`p-4 space-y-3 ${
-                isLowStock ? 'border-amber-300 dark:border-amber-900/60 bg-amber-50/10' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {mat.type === '3D_PRINTING' ? (
-                    <Printer className="h-4 w-4 text-cyan-500" />
-                  ) : (
-                    <Cpu className="h-4 w-4 text-amber-500" />
+            return (
+              <Card
+                key={mat.id}
+                className={`p-4 space-y-3 ${
+                  isLowStock ? 'border-amber-300 dark:border-amber-900/60 bg-amber-50/10' : ''
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {mat.type === '3D_PRINTING' ? (
+                      <Printer className="h-4 w-4 text-cyan-500" />
+                    ) : (
+                      <Cpu className="h-4 w-4 text-amber-500" />
+                    )}
+                    <span className="text-xs font-mono font-bold text-zinc-500">
+                      {mat.category}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={isLowStock ? 'warning' : 'success'}>
+                      {isLowStock ? 'LOW STOCK' : 'IN STOCK'}
+                    </Badge>
+                    <button
+                      onClick={() => handleDelete(mat.id, mat.name)}
+                      className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                      title="Delete Material"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{mat.name}</h3>
+                  {mat.supplier && (
+                    <p className="text-xs text-zinc-500">Supplier: {mat.supplier}</p>
                   )}
-                  <span className="text-xs font-mono font-bold text-zinc-500">
-                    {mat.category}
-                  </span>
                 </div>
-                <Badge variant={isLowStock ? 'warning' : 'success'}>
-                  {isLowStock ? 'LOW STOCK' : 'IN STOCK'}
-                </Badge>
-              </div>
 
-              <div>
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{mat.name}</h3>
-                <p className="text-xs text-zinc-500">
-                  {mat.brand || 'Generic'} • {mat.color || 'Natural'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md">
-                <div>
-                  <span className="text-zinc-400 text-[10px] uppercase font-bold">Current Stock</span>
-                  <p className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 font-mono">
-                    {mat.currentStockQuantity} {mat.unit}
-                  </p>
+                <div className="grid grid-cols-2 gap-2 text-xs p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md">
+                  <div>
+                    <span className="text-zinc-400 text-[10px] uppercase font-bold">Current Stock</span>
+                    <p className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 font-mono">
+                      {mat.currentStockQuantity} {mat.unit}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-zinc-400 text-[10px] uppercase font-bold">Cost / Unit</span>
+                    <p className="font-bold text-sm text-brand-600 dark:text-brand-400 font-mono">
+                      {formatLKR(mat.unitCostLKR || 0)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-zinc-400 text-[10px] uppercase font-bold">Unit Cost</span>
-                  <p className="font-bold text-sm text-brand-600 dark:text-brand-400 font-mono">
-                    {formatLKR(mat.unitCostLKR)} / {mat.unit}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Add Material Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Raw Material">
-        <form onSubmit={handleAddMaterial} className="space-y-4">
-          <Input label="Material Name *" value={name} onChange={(e) => setName(e.target.value)} required />
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Type *"
-              value={type}
-              onChange={(e) => setType(e.target.value as any)}
-              options={[
-                { value: '3D_PRINTING', label: '3D Printing Filament' },
-                { value: 'CNC', label: 'CNC Wood / Sheet' },
-              ]}
-            />
-            <Input label="Category (PLA, Mahogany)" value={category} onChange={(e) => setCategory(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Color" value={color} onChange={(e) => setColor(e.target.value)} />
-            <Input label="Stock Qty" type="number" value={stock} onChange={(e) => setStock(parseFloat(e.target.value) || 0)} />
-            <Input label="Unit Cost (LKR)" type="number" value={unitCost} onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)} />
-          </div>
-          <div className="flex justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Save Material</Button>
-          </div>
-        </form>
-      </Modal>
+      <MaterialModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={loadMaterials}
+      />
     </div>
   );
 }

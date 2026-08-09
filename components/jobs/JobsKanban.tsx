@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { Job, JobStatus } from '@/types/job';
 import { Badge } from '@/components/ui/Badge';
 import { formatLKR, formatDate } from '@/lib/utils/formatters';
-import { Printer, Cpu, Clock, Calendar, ArrowRight, DollarSign } from 'lucide-react';
+import { Printer, Cpu, Calendar, ArrowRight, Trash2 } from 'lucide-react';
 import { JobsService } from '@/lib/services/jobs.service';
 
 interface JobsKanbanProps {
   jobs: Job[];
   onJobStatusChange: () => void;
+  onDeleteJob?: (id: string, jobNumber: string) => void;
 }
 
 const KANBAN_COLUMNS: { id: JobStatus; title: string; color: string }[] = [
@@ -23,7 +24,7 @@ const KANBAN_COLUMNS: { id: JobStatus; title: string; color: string }[] = [
   { id: 'COMPLETED', title: 'Completed', color: 'border-t-zinc-700' },
 ];
 
-export function JobsKanban({ jobs, onJobStatusChange }: JobsKanbanProps) {
+export function JobsKanban({ jobs, onJobStatusChange, onDeleteJob }: JobsKanbanProps) {
   const handleMoveStatus = async (jobId: string, nextStatus: JobStatus) => {
     try {
       await JobsService.updateJobStatus(jobId, nextStatus);
@@ -65,7 +66,7 @@ export function JobsKanban({ jobs, onJobStatusChange }: JobsKanbanProps) {
                     key={job.id}
                     className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 space-y-2.5 shadow-xs hover:border-brand-500/50 transition-all group"
                   >
-                    {/* Header: Job Number & Priority */}
+                    {/* Header: Job Number & Priority & Trash */}
                     <div className="flex items-center justify-between">
                       <Link
                         href={`/jobs/${job.id}`}
@@ -73,17 +74,28 @@ export function JobsKanban({ jobs, onJobStatusChange }: JobsKanbanProps) {
                       >
                         {job.jobNumber}
                       </Link>
-                      <Badge
-                        variant={
-                          job.priority === 'URGENT'
-                            ? 'urgent'
-                            : job.priority === 'HIGH'
-                            ? 'danger'
-                            : 'secondary'
-                        }
-                      >
-                        {job.priority}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant={
+                            job.priority === 'URGENT'
+                              ? 'urgent'
+                              : job.priority === 'HIGH'
+                              ? 'danger'
+                              : 'secondary'
+                          }
+                        >
+                          {job.priority}
+                        </Badge>
+                        {onDeleteJob && (
+                          <button
+                            onClick={() => onDeleteJob(job.id, job.jobNumber)}
+                            className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                            title="Delete Job"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Job Title & Customer */}

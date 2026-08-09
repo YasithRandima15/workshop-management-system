@@ -4,8 +4,9 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Product, CreateProductInput } from '@/types/product';
 
 const LOCAL_STORAGE_KEY = 'workshop_products_v1';
@@ -69,7 +70,7 @@ export class ProductsService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'products'));
+      const snap = await withTimeout(getDocs(collection(db, 'products')));
       const prods: Product[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Product));
       if (prods.length === 0) return getLocalProducts();
       return prods;
@@ -94,7 +95,7 @@ export class ProductsService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'products'), data);
+        const docRef = await withTimeout(addDoc(collection(db, 'products'), data));
         return { id: docRef.id, ...data };
       } catch (err) {
         console.error('Firestore createProduct error:', err);
@@ -104,5 +105,17 @@ export class ProductsService {
     const created: Product = { id: `prod-${Date.now()}`, ...data };
     saveLocalProducts([created, ...getLocalProducts()]);
     return created;
+  }
+
+  static async deleteProduct(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'products', id)));
+      } catch (err) {
+        console.error('Firestore deleteProduct error:', err);
+      }
+    }
+    const local = getLocalProducts().filter((p) => p.id !== id);
+    saveLocalProducts(local);
   }
 }

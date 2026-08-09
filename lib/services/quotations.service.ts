@@ -4,8 +4,9 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Quotation, CreateQuotationInput, QuotationStatus } from '@/types/quotation';
 
 const LOCAL_STORAGE_KEY = 'workshop_quotations_v1';
@@ -71,7 +72,7 @@ export class QuotationsService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'quotations'));
+      const snap = await withTimeout(getDocs(collection(db, 'quotations')));
       const quots: Quotation[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Quotation));
       if (quots.length === 0) return getLocalQuotations();
       return quots;
@@ -97,7 +98,7 @@ export class QuotationsService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'quotations'), data);
+        const docRef = await withTimeout(addDoc(collection(db, 'quotations'), data));
         return { id: docRef.id, ...data };
       } catch (err) {
         console.error('Firestore createQuotation error:', err);
@@ -123,7 +124,7 @@ export class QuotationsService {
 
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'quotations', id), { status, updatedAt: now });
+        await withTimeout(updateDoc(doc(db, 'quotations', id), { status, updatedAt: now }));
       } catch (err) {
         console.error('Firestore updateQuotationStatus error:', err);
       }
@@ -137,5 +138,17 @@ export class QuotationsService {
     }
 
     return updated;
+  }
+
+  static async deleteQuotation(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'quotations', id)));
+      } catch (err) {
+        console.error('Firestore deleteQuotation error:', err);
+      }
+    }
+    const local = getLocalQuotations().filter((q) => q.id !== id);
+    saveLocalQuotations(local);
   }
 }

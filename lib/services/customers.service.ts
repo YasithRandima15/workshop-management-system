@@ -6,8 +6,9 @@ import {
   setDoc,
   updateDoc,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '@/lib/firebase/config';
+import { db, isFirebaseConfigured, withTimeout } from '@/lib/firebase/config';
 import { Customer, CreateCustomerInput, UpdateCustomerInput } from '@/types/customer';
 import { INITIAL_CUSTOMERS } from './mockData';
 
@@ -44,7 +45,7 @@ export class CustomersService {
     }
 
     try {
-      const snap = await getDocs(collection(db, 'customers'));
+      const snap = await withTimeout(getDocs(collection(db, 'customers')));
       const customers: Customer[] = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Customer));
       if (customers.length === 0) {
         return getLocalCustomers().filter((c) => includeArchived || !c.archivedAt);
@@ -62,7 +63,7 @@ export class CustomersService {
       return getLocalCustomers().find((c) => c.id === id) || null;
     }
     try {
-      const snap = await getDoc(doc(db, 'customers', id));
+      const snap = await withTimeout(getDoc(doc(db, 'customers', id)));
       if (snap.exists()) return { id: snap.id, ...snap.data() } as Customer;
       return getLocalCustomers().find((c) => c.id === id) || null;
     } catch (err) {
@@ -87,7 +88,7 @@ export class CustomersService {
 
     if (isFirebaseConfigured()) {
       try {
-        const docRef = await addDoc(collection(db, 'customers'), newCustomerData);
+        const docRef = await withTimeout(addDoc(collection(db, 'customers'), newCustomerData));
         return { id: docRef.id, ...newCustomerData };
       } catch (err) {
         console.error('Firestore createCustomer error:', err);
@@ -112,7 +113,7 @@ export class CustomersService {
 
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'customers', id), { ...input, updatedAt: now });
+        await withTimeout(updateDoc(doc(db, 'customers', id), { ...input, updatedAt: now }));
       } catch (err) {
         console.error('Firestore updateCustomer error:', err);
       }
@@ -128,11 +129,23 @@ export class CustomersService {
     return updated;
   }
 
+  static async deleteCustomer(id: string): Promise<void> {
+    if (isFirebaseConfigured()) {
+      try {
+        await withTimeout(deleteDoc(doc(db, 'customers', id)));
+      } catch (err) {
+        console.error('Firestore deleteCustomer error:', err);
+      }
+    }
+    const local = getLocalCustomers().filter((c) => c.id !== id);
+    saveLocalCustomers(local);
+  }
+
   static async archiveCustomer(id: string): Promise<void> {
     const now = new Date().toISOString();
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'customers', id), { archivedAt: now });
+        await withTimeout(updateDoc(doc(db, 'customers', id), { archivedAt: now }));
       } catch (err) {
         console.error('Firestore archiveCustomer error:', err);
       }
@@ -155,11 +168,11 @@ export class CustomersService {
 
     if (isFirebaseConfigured()) {
       try {
-        await updateDoc(doc(db, 'customers', customerId), {
+        await withTimeout(updateDoc(doc(db, 'customers', customerId), {
           totalJobsCount: newCount,
           totalSpentLKR: newSpent,
           updatedAt: now,
-        });
+        }));
       } catch (err) {
         console.error('Firestore updateCustomerStats error:', err);
       }

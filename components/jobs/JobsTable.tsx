@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Job } from '@/types/job';
 import { Badge } from '@/components/ui/Badge';
 import { formatLKR, formatDate } from '@/lib/utils/formatters';
-import { Printer, Cpu, ChevronRight, Eye } from 'lucide-react';
+import { Printer, Cpu, Eye, Trash2 } from 'lucide-react';
 
 interface JobsTableProps {
   jobs: Job[];
+  onDeleteJob?: (id: string, jobNumber: string) => void;
 }
 
-export function JobsTable({ jobs }: JobsTableProps) {
+export function JobsTable({ jobs, onDeleteJob }: JobsTableProps) {
   return (
     <div className="w-full overflow-x-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xs">
       <table className="w-full text-left border-collapse text-xs">
@@ -128,12 +129,24 @@ export function JobsTable({ jobs }: JobsTableProps) {
 
                 {/* Action */}
                 <td className="p-3.5 text-center">
-                  <Link
-                    href={`/jobs/${job.id}`}
-                    className="inline-flex items-center gap-1 p-1.5 text-zinc-500 hover:text-brand-500 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <Eye className="h-4 w-4" /> View
-                  </Link>
+                  <div className="flex items-center justify-center gap-2">
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      className="inline-flex items-center gap-1 p-1 text-zinc-500 hover:text-brand-500 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                    {onDeleteJob && (
+                      <button
+                        onClick={() => onDeleteJob(job.id, job.jobNumber)}
+                        className="p-1 text-zinc-400 hover:text-rose-500 transition-colors rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        title="Delete Job Order"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))
