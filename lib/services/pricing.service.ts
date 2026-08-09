@@ -1,4 +1,4 @@
-import { JobPart } from '@/types/job';
+import { Job, JobPart } from '@/types/job';
 
 export interface PricingBreakdown {
   partsSubtotalLKR: number;
@@ -28,6 +28,7 @@ export interface ElectricityBillCalculation {
   printCostLKR: number;
   cncCostLKR: number;
   totalBillLKR: number;
+  jobCount?: number;
 }
 
 export class PricingService {
@@ -90,8 +91,8 @@ export class PricingService {
     const totalBillLKR = Math.round(totalUnits * unitRateLKR);
 
     return {
-      printingHours: safePrintHours,
-      cncHours: safeCncHours,
+      printingHours: parseFloat(safePrintHours.toFixed(1)),
+      cncHours: parseFloat(safeCncHours.toFixed(1)),
       printUnits: parseFloat(printUnits.toFixed(2)),
       cncUnits: parseFloat(cncUnits.toFixed(2)),
       totalUnits: parseFloat(totalUnits.toFixed(2)),
@@ -99,6 +100,41 @@ export class PricingService {
       printCostLKR,
       cncCostLKR,
       totalBillLKR,
+    };
+  }
+
+  /**
+   * Automatically calculates Monthly Electricity Bill from saved database Jobs!
+   */
+  static calculateElectricityBillFromJobs(
+    jobs: Job[],
+    unitRateLKR = 30
+  ): ElectricityBillCalculation {
+    let totalPrintMinutes = 0;
+    let totalCncMinutes = 0;
+
+    for (const job of jobs) {
+      if (!job.parts || job.parts.length === 0) continue;
+
+      for (const part of job.parts) {
+        const qty = Math.max(1, part.quantity || 1);
+        if (part.manufacturingMethod === '3D_PRINTING') {
+          const mins = part.printDetails?.estimatedPrintMinutes || 60;
+          totalPrintMinutes += mins * qty;
+        } else if (part.manufacturingMethod === 'CNC') {
+          const mins = part.cncDetails?.estimatedMachiningMinutes || 60;
+          totalCncMinutes += mins * qty;
+        }
+      }
+    }
+
+    const printHours = totalPrintMinutes / 60;
+    const cncHours = totalCncMinutes / 60;
+
+    const result = this.calculateElectricityBill(printHours, cncHours, unitRateLKR);
+    return {
+      ...result,
+      jobCount: jobs.length,
     };
   }
 
