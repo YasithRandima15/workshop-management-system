@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { JobPart, ManufacturingMethod } from '@/types/job';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
-import { Printer, Cpu, Trash2, Copy, DollarSign } from 'lucide-react';
+import { Printer, Cpu, Trash2, Copy } from 'lucide-react';
 import { formatLKR } from '@/lib/utils/formatters';
 import { PricingService } from '@/lib/services/pricing.service';
 
@@ -18,26 +18,33 @@ interface PartBuilderCardProps {
 }
 
 export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartBuilderCardProps) {
+  const initialWeight = part.printDetails?.filamentWeightGrams || 50;
+  const defaultRate = initialWeight < 100 ? 20 : 15;
+  const [ratePerGram, setRatePerGram] = useState<number>(defaultRate);
+
   const handleMethodChange = (method: ManufacturingMethod) => {
     if (method === '3D_PRINTING') {
-      const defaultPrice = PricingService.calculate3DPrintPartPrice(100, 120);
+      const weight = 50;
+      const rate = 20;
+      const autoPrice = PricingService.calculate3DPrintPartPrice(weight, rate);
+      setRatePerGram(rate);
       onUpdate({
         ...part,
         manufacturingMethod: '3D_PRINTING',
-        unitPriceLKR: defaultPrice,
-        totalPriceLKR: defaultPrice * part.quantity,
+        unitPriceLKR: autoPrice,
+        totalPriceLKR: autoPrice * part.quantity,
         printDetails: {
           materialName: 'PLA Tough',
           color: 'Black',
-          filamentWeightGrams: 100,
-          estimatedPrintMinutes: 120,
+          filamentWeightGrams: weight,
+          estimatedPrintMinutes: 60,
           layerHeightMm: 0.20,
           infillPercentage: 20,
         },
         cncDetails: undefined,
       });
     } else {
-      const defaultPrice = PricingService.calculateCNCPartPrice(5000, 90);
+      const defaultPrice = PricingService.calculateCNCPartPrice(3000, 60);
       onUpdate({
         ...part,
         manufacturingMethod: 'CNC',
@@ -48,8 +55,8 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
           thicknessMm: 18,
           lengthMm: 300,
           widthMm: 200,
-          estimatedMachiningMinutes: 90,
-          materialCostLKR: 5000,
+          estimatedMachiningMinutes: 60,
+          materialCostLKR: 3000,
         },
         printDetails: undefined,
       });
@@ -74,31 +81,35 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
     });
   };
 
-  // Recalculate 3D print auto pricing
-  const update3DPrintDetails = (field: string, value: any) => {
-    const currentDetails = part.printDetails || {
-      filamentWeightGrams: 100,
-      estimatedPrintMinutes: 120,
-    };
-    const updatedDetails = { ...currentDetails, [field]: value };
-    const autoPrice = PricingService.calculate3DPrintPartPrice(
-      updatedDetails.filamentWeightGrams,
-      updatedDetails.estimatedPrintMinutes
-    );
+  const update3DWeightOrRate = (newWeight?: number, newRate?: number) => {
+    const weight = Math.max(0, newWeight !== undefined ? newWeight : (part.printDetails?.filamentWeightGrams || 0));
+    const rate = newRate !== undefined ? newRate : (weight < 100 ? 20 : 15);
+    
+    if (newRate !== undefined) setRatePerGram(newRate);
+    else if (newWeight !== undefined) {
+      const autoRate = newWeight < 100 ? 20 : 15;
+      setRatePerGram(autoRate);
+    }
+
+    const autoPrice = PricingService.calculate3DPrintPartPrice(weight, rate);
 
     onUpdate({
       ...part,
-      printDetails: updatedDetails,
       unitPriceLKR: autoPrice,
       totalPriceLKR: autoPrice * part.quantity,
+      printDetails: {
+        materialName: part.printDetails?.materialName || 'PLA Tough',
+        color: part.printDetails?.color || 'Black',
+        filamentWeightGrams: weight,
+        estimatedPrintMinutes: part.printDetails?.estimatedPrintMinutes || 60,
+      },
     });
   };
 
-  // Recalculate CNC auto pricing
   const updateCNCDetails = (field: string, value: any) => {
     const currentDetails = part.cncDetails || {
-      materialCostLKR: 5000,
-      estimatedMachiningMinutes: 90,
+      materialCostLKR: 3000,
+      estimatedMachiningMinutes: 60,
       thicknessMm: 18,
       lengthMm: 300,
       widthMm: 200,
@@ -133,7 +144,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
           )}
           <input
             type="text"
-            placeholder="Part Name (e.g. Robot Gear, Carved Panel)"
+            placeholder="Part Name (e.g. Enclosure Box, Custom Gear)"
             value={part.partName}
             onChange={(e) => onUpdate({ ...part, partName: e.target.value })}
             className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-zinc-300 dark:hover:border-zinc-700 focus:border-brand-500 focus:outline-none text-zinc-900 dark:text-zinc-100 w-full"
@@ -187,69 +198,82 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
         />
       </div>
 
-      {/* Conditional 3D Printing Fields */}
+      {/* Simplified 3D Printing Fields */}
       {part.manufacturingMethod === '3D_PRINTING' && (
         <div className="bg-cyan-50/40 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-900/40 rounded-md p-3 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400">
-              3D Printing Parameters
+              3D Print Gram Weight Calculation
             </p>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300">
-              Gram Rate: {(part.printDetails?.filamentWeightGrams || 0) < 100 ? 'Rs 20/g (<100g)' : 'Rs 15/g (≥100g)'}
+              Tier Rule: &lt;100g = 20 LKR/g | ≥100g = 15 LKR/g
             </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <Select
               label="Filament Material"
-              value={part.printDetails?.materialName || 'PLA'}
-              onChange={(e) => update3DPrintDetails('materialName', e.target.value)}
+              value={part.printDetails?.materialName || 'PLA Tough'}
+              onChange={(e) =>
+                onUpdate({
+                  ...part,
+                  printDetails: {
+                    materialName: e.target.value,
+                    color: part.printDetails?.color || 'Black',
+                    filamentWeightGrams: part.printDetails?.filamentWeightGrams || 50,
+                    estimatedPrintMinutes: part.printDetails?.estimatedPrintMinutes || 60,
+                  },
+                })
+              }
               options={[
                 { value: 'PLA Tough', label: 'PLA Tough' },
                 { value: 'PETG Carbon Fiber', label: 'PETG Carbon Fiber' },
                 { value: 'ABS High Temp', label: 'ABS High Temp' },
-                { value: 'TPU Flexible', label: 'TPU Flexible (95A)' },
-                { value: 'ASA UV Resistant', label: 'ASA UV Resistant' },
+                { value: 'TPU Flexible', label: 'TPU Flexible' },
+                { value: 'ASA Outdoor', label: 'ASA Outdoor' },
               ]}
             />
+
             <Input
-              label="Color"
-              value={part.printDetails?.color || 'Black'}
-              onChange={(e) => update3DPrintDetails('color', e.target.value)}
-            />
-            <Input
-              label="Est. Filament Weight (g)"
+              label="Part Weight in Grams (g) *"
               type="number"
               value={part.printDetails?.filamentWeightGrams || 0}
-              onChange={(e) => update3DPrintDetails('filamentWeightGrams', parseFloat(e.target.value) || 0)}
+              onChange={(e) => update3DWeightOrRate(parseFloat(e.target.value) || 0, undefined)}
             />
+
             <Input
-              label="Est. Print Time (mins)"
+              label="Cost Rate (LKR per gram) *"
               type="number"
-              value={part.printDetails?.estimatedPrintMinutes || 0}
-              onChange={(e) => update3DPrintDetails('estimatedPrintMinutes', parseInt(e.target.value) || 0)}
+              value={ratePerGram}
+              onChange={(e) => update3DWeightOrRate(undefined, parseFloat(e.target.value) || 0)}
             />
+          </div>
+
+          <div className="p-2 bg-white dark:bg-zinc-900 rounded border border-cyan-200 dark:border-cyan-900/60 text-xs flex justify-between items-center font-mono">
+            <span className="text-zinc-500">Calculated 3D Print Cost:</span>
+            <span className="font-bold text-cyan-600 dark:text-cyan-400">
+              {part.printDetails?.filamentWeightGrams || 0}g × {ratePerGram} LKR/g = {formatLKR(part.unitPriceLKR)}
+            </span>
           </div>
         </div>
       )}
 
-      {/* Conditional CNC Fields */}
+      {/* CNC Fields */}
       {part.manufacturingMethod === 'CNC' && (
         <div className="bg-amber-50/40 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded-md p-3 space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
-            CNC Routing & Machining Parameters
+            CNC Machining Parameters
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <Select
-              label="Wood / Material Type"
+              label="Wood / Material"
               value={part.cncDetails?.woodType || 'Mahogany'}
               onChange={(e) => updateCNCDetails('woodType', e.target.value)}
               options={[
                 { value: 'Mahogany Hardwood', label: 'Mahogany Hardwood' },
                 { value: 'Teak Hardwood', label: 'Teak Hardwood' },
-                { value: 'Jack Wood', label: 'Jack Wood' },
                 { value: 'MDF Board', label: 'MDF Board' },
                 { value: 'Birch Plywood', label: 'Birch Plywood' },
-                { value: 'Cast Clear Acrylic', label: 'Cast Clear Acrylic' },
               ]}
             />
             <Input
@@ -265,7 +289,7 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
               onChange={(e) => updateCNCDetails('materialCostLKR', parseFloat(e.target.value) || 0)}
             />
             <Input
-              label="Est. Machining Time (mins)"
+              label="Machining Time (mins)"
               type="number"
               value={part.cncDetails?.estimatedMachiningMinutes || 0}
               onChange={(e) => updateCNCDetails('estimatedMachiningMinutes', parseInt(e.target.value) || 0)}

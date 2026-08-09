@@ -32,31 +32,28 @@ export interface ElectricityBillCalculation {
 
 export class PricingService {
   /**
-   * Calculates 3D printing part price with Tiered Sri Lankan Material Cost Rule:
-   * - Below 100 grams: 20 LKR per gram
-   * - 100 grams or above: 15 LKR per gram
+   * Calculates 3D printing part price strictly based on Weight (grams) x Rate Per Gram:
+   * - Below 100 grams: default 20 LKR per gram
+   * - 100 grams or above: default 15 LKR per gram
+   * (Allows custom rate per gram override)
    */
   static calculate3DPrintPartPrice(
     weightGrams: number,
-    printMinutes: number,
-    customRatePerGram?: number,
-    ratePerHour = 100
+    customRatePerGram?: number
   ): number {
     const safeWeight = Math.max(0, weightGrams || 0);
-    const safeMinutes = Math.max(0, printMinutes || 0);
 
-    // Tiered rate: < 100g -> 20 LKR/g, >= 100g -> 15 LKR/g
-    const ratePerGram = customRatePerGram !== undefined
+    // Default Tiered rate: < 100g -> 20 LKR/g, >= 100g -> 15 LKR/g
+    const ratePerGram = customRatePerGram !== undefined && customRatePerGram > 0
       ? customRatePerGram
       : (safeWeight < 100 ? 20 : 15);
 
     const materialCost = safeWeight * ratePerGram;
-    const machineTimeCost = (safeMinutes / 60) * ratePerHour;
-    return Math.round(materialCost + machineTimeCost);
+    return Math.round(materialCost);
   }
 
   /**
-   * Calculates estimated cost for CNC part based on material cost and machining time.
+   * Calculates estimated cost for CNC part based on material cost and machining fee.
    */
   static calculateCNCPartPrice(
     materialCostLKR: number,
@@ -70,7 +67,8 @@ export class PricingService {
   }
 
   /**
-   * Calculates Monthly Electricity / Light Bill:
+   * Standalone Monthly Electricity / Light Bill Calculator:
+   * (For monthly viewing & expense logging only - NOT added into individual part pricing)
    * - 1 Unit = 30 LKR
    * - 3D Printing: 0.1 units per operating hour (3 LKR/hr)
    * - CNC Machining: 0.3 units per operating hour (9 LKR/hr)
