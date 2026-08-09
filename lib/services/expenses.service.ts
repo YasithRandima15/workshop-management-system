@@ -10,44 +10,7 @@ import { Expense, CreateExpenseInput } from '@/types/expense';
 
 const LOCAL_STORAGE_KEY = 'workshop_expenses_v1';
 
-const INITIAL_EXPENSES: Expense[] = [
-  {
-    id: 'exp-1',
-    category: 'UTILITIES',
-    categoryName: 'Electricity & Utilities',
-    description: 'Monthly Industrial Power Bill (3-Phase CNC Load)',
-    amountLKR: 45000,
-    date: '2026-08-01',
-    loggedBy: 'usr-1',
-    loggedByName: 'Admin',
-    createdAt: '2026-08-01T09:00:00Z',
-    updatedAt: '2026-08-01T09:00:00Z',
-  },
-  {
-    id: 'exp-2',
-    category: 'TOOLING',
-    categoryName: 'CNC Tooling Bits',
-    description: '6mm 2-Flute Carbide End Mills (10 Pack)',
-    amountLKR: 18500,
-    date: '2026-08-03',
-    loggedBy: 'usr-1',
-    loggedByName: 'Admin',
-    createdAt: '2026-08-03T11:30:00Z',
-    updatedAt: '2026-08-03T11:30:00Z',
-  },
-  {
-    id: 'exp-3',
-    category: 'RAW_MATERIAL',
-    categoryName: 'Filament Stock',
-    description: '5 Spools eSUN PLA Tough Filament (Black / White)',
-    amountLKR: 28000,
-    date: '2026-08-05',
-    loggedBy: 'usr-1',
-    loggedByName: 'Admin',
-    createdAt: '2026-08-05T14:15:00Z',
-    updatedAt: '2026-08-05T14:15:00Z',
-  },
-];
+const INITIAL_EXPENSES: Expense[] = [];
 
 function getLocalExpenses(): Expense[] {
   if (typeof window === 'undefined') return INITIAL_EXPENSES;

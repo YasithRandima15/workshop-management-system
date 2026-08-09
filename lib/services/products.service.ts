@@ -11,34 +11,7 @@ import { Product, CreateProductInput } from '@/types/product';
 
 const LOCAL_STORAGE_KEY = 'workshop_products_v1';
 
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: 'prod-1',
-    sku: 'PRD-CNC-G01',
-    name: 'Precision Aluminum Spur Gear 40T',
-    category: 'CUSTOM_GEARS',
-    categoryName: 'Custom Machined Gears',
-    description: '40-Tooth Module 1.5 Aluminum 6061 Gear with 8mm D-Bore',
-    unitPriceLKR: 4500,
-    costPriceLKR: 1800,
-    stockQuantity: 14,
-    createdAt: '2026-08-01T08:00:00Z',
-    updatedAt: '2026-08-01T08:00:00Z',
-  },
-  {
-    id: 'prod-2',
-    sku: 'PRD-3D-B02',
-    name: 'Universal NEMA 17 Stepper Mount Bracket',
-    category: 'SPARE_PARTS',
-    categoryName: '3D Printed Spare Parts',
-    description: 'High-strength PETG 100% infill motor mounting bracket',
-    unitPriceLKR: 1200,
-    costPriceLKR: 350,
-    stockQuantity: 28,
-    createdAt: '2026-08-02T10:00:00Z',
-    updatedAt: '2026-08-02T10:00:00Z',
-  },
-];
+const INITIAL_PRODUCTS: Product[] = [];
 
 function getLocalProducts(): Product[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS;

@@ -11,36 +11,7 @@ import { Quotation, CreateQuotationInput, QuotationStatus } from '@/types/quotat
 
 const LOCAL_STORAGE_KEY = 'workshop_quotations_v1';
 
-const INITIAL_QUOTATIONS: Quotation[] = [
-  {
-    id: 'qt-101',
-    quotationNumber: 'QT-2026-0010',
-    customerId: 'cust-1',
-    customerName: 'Vega Innovations',
-    customerEmail: 'engineering@vega.lk',
-    title: 'Custom Battery Enclosure Milling & SLA Covers',
-    parts: [
-      {
-        id: 'part-q1',
-        partName: 'Lower Housing Base',
-        manufacturingMethod: 'CNC',
-        quantity: 2,
-        unitPriceLKR: 16375,
-        totalPriceLKR: 32750,
-      },
-    ],
-    subtotalLKR: 32750,
-    discountLKR: 2750,
-    taxLKR: 0,
-    totalLKR: 30000,
-    validUntil: '2026-08-30',
-    status: 'SENT',
-    notes: 'Quotation valid for 30 days. Material pricing subject to market variance.',
-    createdBy: 'usr-1',
-    createdAt: '2026-08-05T10:00:00Z',
-    updatedAt: '2026-08-05T10:00:00Z',
-  },
-];
+const INITIAL_QUOTATIONS: Quotation[] = [];
 
 function getLocalQuotations(): Quotation[] {
   if (typeof window === 'undefined') return INITIAL_QUOTATIONS;
