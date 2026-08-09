@@ -5,11 +5,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { formatLKR } from '@/lib/utils/formatters';
-import { Download, BarChart3, TrendingUp, PieChart } from 'lucide-react';
+import { Download, BarChart3, TrendingUp, PieChart, Zap } from 'lucide-react';
 import { PaymentsService } from '@/lib/services/payments.service';
 import { ExpensesService } from '@/lib/services/expenses.service';
 import { JobsService } from '@/lib/services/jobs.service';
 import { Payment, Expense, Job } from '@/types';
+import { ElectricityBillModal } from '@/components/expenses/ElectricityBillModal';
 import {
   ResponsiveContainer,
   BarChart,
@@ -29,6 +30,7 @@ export default function ReportsPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isElecModalOpen, setIsElecModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -107,6 +109,15 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsElecModalOpen(true)}
+            leftIcon={<Zap className="h-4 w-4 text-amber-500" />}
+          >
+            Light Bill Calculator
+          </Button>
+
           <Select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -222,6 +233,11 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ElectricityBillModal
+        isOpen={isElecModalOpen}
+        onClose={() => setIsElecModalOpen(false)}
+      />
     </div>
   );
 }

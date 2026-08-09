@@ -3,15 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { formatLKR, formatDate } from '@/lib/utils/formatters';
-import { DollarSign, Plus, Trash2, Tag } from 'lucide-react';
+import { DollarSign, Plus, Trash2, Tag, Zap } from 'lucide-react';
 import { ExpensesService } from '@/lib/services/expenses.service';
 import { Expense } from '@/types/expense';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
+import { ElectricityBillModal } from '@/components/expenses/ElectricityBillModal';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isElecModalOpen, setIsElecModalOpen] = useState(false);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -50,13 +52,22 @@ export default function ExpensesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="px-3 py-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-lg text-xs">
             <span className="text-zinc-500 font-medium">Total Expenses:</span>{' '}
             <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
               {formatLKR(totalAmount)}
             </span>
           </div>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsElecModalOpen(true)}
+            leftIcon={<Zap className="h-4 w-4 text-amber-500" />}
+          >
+            Light Bill Calculator
+          </Button>
 
           <Button
             size="sm"
@@ -77,9 +88,14 @@ export default function ExpensesPage() {
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             Keep track of operational costs, factory electricity, and consumable stock purchases.
           </p>
-          <Button size="sm" onClick={() => setIsModalOpen(true)}>
-            Log First Expense
-          </Button>
+          <div className="flex justify-center gap-3">
+            <Button size="sm" variant="outline" onClick={() => setIsElecModalOpen(true)}>
+              Calculate Light Bill
+            </Button>
+            <Button size="sm" onClick={() => setIsModalOpen(true)}>
+              Log First Expense
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-x-auto">
@@ -130,6 +146,12 @@ export default function ExpensesPage() {
       <ExpenseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchExpenses}
+      />
+
+      <ElectricityBillModal
+        isOpen={isElecModalOpen}
+        onClose={() => setIsElecModalOpen(false)}
         onSuccess={fetchExpenses}
       />
     </div>

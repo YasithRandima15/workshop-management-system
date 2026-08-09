@@ -190,9 +190,14 @@ export function PartBuilderCard({ part, onUpdate, onDuplicate, onDelete }: PartB
       {/* Conditional 3D Printing Fields */}
       {part.manufacturingMethod === '3D_PRINTING' && (
         <div className="bg-cyan-50/40 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-900/40 rounded-md p-3 space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400">
-            3D Printing Parameters
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400">
+              3D Printing Parameters
+            </p>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300">
+              Gram Rate: {(part.printDetails?.filamentWeightGrams || 0) < 100 ? 'Rs 20/g (<100g)' : 'Rs 15/g (≥100g)'}
+            </span>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <Select
               label="Filament Material"

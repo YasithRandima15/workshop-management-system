@@ -18,14 +18,38 @@ export interface CalculatePricingInput {
   paidAmountLKR?: number;
 }
 
+export interface ElectricityBillCalculation {
+  printingHours: number;
+  cncHours: number;
+  printUnits: number;
+  cncUnits: number;
+  totalUnits: number;
+  unitRateLKR: number;
+  printCostLKR: number;
+  cncCostLKR: number;
+  totalBillLKR: number;
+}
+
 export class PricingService {
   /**
-   * Calculates estimated cost for 3D printing part based on weight and print time.
-   * Standard default rate: Rs 15 per gram + Rs 100 per print hour
+   * Calculates 3D printing part price with Tiered Sri Lankan Material Cost Rule:
+   * - Below 100 grams: 20 LKR per gram
+   * - 100 grams or above: 15 LKR per gram
    */
-  static calculate3DPrintPartPrice(weightGrams: number, printMinutes: number, ratePerGram = 15, ratePerHour = 100): number {
+  static calculate3DPrintPartPrice(
+    weightGrams: number,
+    printMinutes: number,
+    customRatePerGram?: number,
+    ratePerHour = 100
+  ): number {
     const safeWeight = Math.max(0, weightGrams || 0);
     const safeMinutes = Math.max(0, printMinutes || 0);
+
+    // Tiered rate: < 100g -> 20 LKR/g, >= 100g -> 15 LKR/g
+    const ratePerGram = customRatePerGram !== undefined
+      ? customRatePerGram
+      : (safeWeight < 100 ? 20 : 15);
+
     const materialCost = safeWeight * ratePerGram;
     const machineTimeCost = (safeMinutes / 60) * ratePerHour;
     return Math.round(materialCost + machineTimeCost);
@@ -33,9 +57,12 @@ export class PricingService {
 
   /**
    * Calculates estimated cost for CNC part based on material cost and machining time.
-   * Standard default machine rate: Rs 1500 per machining hour
    */
-  static calculateCNCPartPrice(materialCostLKR: number, machiningMinutes: number, ratePerHour = 1500): number {
+  static calculateCNCPartPrice(
+    materialCostLKR: number,
+    machiningMinutes: number,
+    ratePerHour = 1500
+  ): number {
     const safeMatCost = Math.max(0, materialCostLKR || 0);
     const safeMinutes = Math.max(0, machiningMinutes || 0);
     const machineCost = (safeMinutes / 60) * ratePerHour;
@@ -43,8 +70,42 @@ export class PricingService {
   }
 
   /**
+   * Calculates Monthly Electricity / Light Bill:
+   * - 1 Unit = 30 LKR
+   * - 3D Printing: 0.1 units per operating hour (3 LKR/hr)
+   * - CNC Machining: 0.3 units per operating hour (9 LKR/hr)
+   */
+  static calculateElectricityBill(
+    printingHours: number,
+    cncHours: number,
+    unitRateLKR = 30
+  ): ElectricityBillCalculation {
+    const safePrintHours = Math.max(0, printingHours || 0);
+    const safeCncHours = Math.max(0, cncHours || 0);
+
+    const printUnits = safePrintHours * 0.1;
+    const cncUnits = safeCncHours * 0.3;
+    const totalUnits = printUnits + cncUnits;
+
+    const printCostLKR = Math.round(printUnits * unitRateLKR);
+    const cncCostLKR = Math.round(cncUnits * unitRateLKR);
+    const totalBillLKR = Math.round(totalUnits * unitRateLKR);
+
+    return {
+      printingHours: safePrintHours,
+      cncHours: safeCncHours,
+      printUnits: parseFloat(printUnits.toFixed(2)),
+      cncUnits: parseFloat(cncUnits.toFixed(2)),
+      totalUnits: parseFloat(totalUnits.toFixed(2)),
+      unitRateLKR,
+      printCostLKR,
+      cncCostLKR,
+      totalBillLKR,
+    };
+  }
+
+  /**
    * Centralized Job Pricing Calculation
-   * All values rounded to integer LKR amounts to avoid floating point money errors.
    */
   static calculateJobPricing(input: CalculatePricingInput): PricingBreakdown {
     const {
@@ -55,28 +116,19 @@ export class PricingService {
       paidAmountLKR = 0,
     } = input;
 
-    // 1. Calculate sum of parts
     const partsSubtotalLKR = parts.reduce((acc, part) => {
       const unitPrice = Math.round(part.unitPriceLKR || 0);
       const qty = Math.max(1, part.quantity || 1);
-      return acc + (unitPrice * qty);
+      return acc + unitPrice * qty;
     }, 0);
 
-    // 2. Apply discount safely
     const safeDiscount = Math.min(partsSubtotalLKR, Math.max(0, Math.round(discountLKR)));
     const discountedSubtotal = partsSubtotalLKR - safeDiscount;
-
-    // 3. Apply delivery fee
     const safeDeliveryFee = Math.max(0, Math.round(deliveryFeeLKR));
-
-    // 4. Apply Tax if tax percentage > 0
     const safeTaxPercentage = Math.max(0, taxPercentage);
     const taxLKR = safeTaxPercentage > 0 ? Math.round(discountedSubtotal * (safeTaxPercentage / 100)) : 0;
-
-    // 5. Calculate Final Total
     const totalLKR = discountedSubtotal + taxLKR + safeDeliveryFee;
 
-    // 6. Balance & Paid Amount
     const safePaidAmount = Math.max(0, Math.round(paidAmountLKR));
     const balanceLKR = Math.max(0, totalLKR - safePaidAmount);
 
@@ -91,9 +143,6 @@ export class PricingService {
     };
   }
 
-  /**
-   * Calculates balance after a new payment submission
-   */
   static calculateNewBalance(currentBalanceLKR: number, newPaymentLKR: number): number {
     const safeBalance = Math.round(currentBalanceLKR || 0);
     const safePayment = Math.round(newPaymentLKR || 0);
