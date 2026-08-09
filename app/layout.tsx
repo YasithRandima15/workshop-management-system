@@ -8,8 +8,11 @@ import { QueryProvider } from '@/providers/QueryProvider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Precision Labs | 3D Printing & CNC Workshop Management',
-  description: 'Production-grade workshop management system for 3D printing and CNC manufacturing.',
+  title: 'Mechamind ENGINEERING | Next-Gen Machines, Designed for You',
+  description: 'Production-grade workshop management system for Mechamind ENGINEERING - 3D Printing & CNC Manufacturing.',
+  icons: {
+    icon: '/mechamind-logo.jpg',
+  },
 };
 
 export default function RootLayout({

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Cpu, Printer, Lock, Mail, User as UserIcon, AlertCircle, ArrowRight } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,18 +63,22 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Header Logo */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 shadow-xl">
-            <Printer className="h-4 w-4 text-cyan-400" />
-            <Cpu className="h-4 w-4 text-amber-400" />
-            <span>Precision Labs SaaS</span>
+        <div className="text-center space-y-3">
+          <div className="inline-block p-1 bg-zinc-900 border border-zinc-800 rounded-full shadow-2xl">
+            <img
+              src="/mechamind-logo.jpg"
+              alt="Mechamind ENGINEERING"
+              className="h-20 w-20 rounded-full object-cover border-2 border-cyan-500/50 shadow-lg mx-auto"
+            />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">
-            Workshop Operating System
-          </h1>
-          <p className="text-xs text-zinc-400">
-            Real-time management for 3D Printing & CNC Machining
-          </p>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white uppercase">
+              Mechamind <span className="text-cyan-400 font-extrabold">ENGINEERING</span>
+            </h1>
+            <p className="text-xs text-amber-400 font-bold tracking-wide mt-0.5">
+              Next-Gen Machines, Designed for You
+            </p>
+          </div>
         </div>
 
         {/* Card Form */}
@@ -139,7 +143,7 @@ export default function LoginPage() {
             <Input
               label="Email Address *"
               type="email"
-              placeholder="operator@precisionlabs.lk"
+              placeholder="operator@mechamind.lk"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="h-4 w-4 text-zinc-400" />}
@@ -162,7 +166,7 @@ export default function LoginPage() {
               isLoading={loading}
               rightIcon={<ArrowRight className="h-4 w-4" />}
             >
-              {mode === 'signin' ? 'Sign In to Dashboard' : 'Create Operator Account'}
+              {mode === 'signin' ? 'Sign In to Mechamind Portal' : 'Create Operator Account'}
             </Button>
           </form>
 
@@ -187,7 +191,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] text-zinc-500">
-          Powered by Firebase Authentication & Firestore DB
+          Mechamind ENGINEERING Workshop Operating System
         </p>
       </div>
     </div>

@@ -16,7 +16,6 @@ import {
   DollarSign,
   BarChart3,
   Settings,
-  Printer,
   ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
@@ -50,16 +49,21 @@ export function Sidebar({ className }: { className?: string }) {
     >
       {/* Brand Header */}
       <div>
-        <div className="h-16 flex items-center px-5 border-b border-zinc-800 gap-3">
-          <div className="h-9 w-9 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
-            <Printer className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-zinc-100 tracking-tight leading-tight">
-              PRECISION LABS
+        <div className="h-16 flex items-center px-4 border-b border-zinc-800 gap-3">
+          <img
+            src="/mechamind-logo.jpg"
+            alt="Mechamind ENGINEERING Logo"
+            className="h-10 w-10 rounded-full object-cover border border-cyan-500/40 shadow-md shrink-0"
+          />
+          <div className="overflow-hidden">
+            <h1 className="text-xs font-black text-zinc-100 tracking-wider leading-tight uppercase truncate">
+              Mechamind
             </h1>
-            <p className="text-[10px] text-zinc-500 tracking-wider font-semibold uppercase">
-              3D Print & CNC Works
+            <p className="text-[10px] font-extrabold text-cyan-400 tracking-widest uppercase truncate">
+              ENGINEERING
+            </p>
+            <p className="text-[8px] text-amber-400 font-medium truncate">
+              Next-Gen Machines, Designed for You
             </p>
           </div>
         </div>
